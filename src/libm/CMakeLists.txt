@@ -14,6 +14,26 @@ set(EXT_ENABLE_ALIAS AVX512F ADVSIMD NEON32 VSX)
 set(SLEEF_ORG_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sleeflibm_header.h.org)
 set(SLEEF_ORG_FOOTER ${CMAKE_CURRENT_SOURCE_DIR}/sleeflibm_footer.h.org)
 set(SLEEF_INCLUDE_HEADER ${CMAKE_BINARY_DIR}/include/sleef.h)
+set(SLEEF_SIMD_HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimdsp.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimddp.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/rempitab.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/estrin.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/df.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dd.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../common/misc.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperadvsimd.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperavx2_128.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperavx2.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperavx512f.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperavx.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperneon32.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperpower_128.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperpurec.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helperpurec_scalar.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helpersse2.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helpersve.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../arch/helpervecext.h)
 
 set(SLEEF_HEADER_COMMANDS "")
 list(APPEND SLEEF_HEADER_COMMANDS COMMAND ${CMAKE_COMMAND} -E copy ${SLEEF_ORG_HEADER} ${SLEEF_INCLUDE_HEADER})
@@ -160,7 +180,7 @@ set_target_properties(
 # --------------------------------------------------------------------
 # Build main library
 
-set(COMMON_TARGET_PROPERTIES 
+set(COMMON_TARGET_PROPERTIES
   C_STANDARD 99                  # -std=gnu99
   )
 
@@ -215,8 +235,8 @@ foreach(SIMD ${SLEEF_SUPPORTED_EXTENSIONS})
     endif()
 
     # Create a library
-    add_library(${OBJECT_${SIMD}} OBJECT ${SIMD_SOURCES} ${HEADER_${SIMD}})    
-    add_library(${OBJECTDET_${SIMD}} OBJECT ${SIMD_SOURCES} ${HEADER_${SIMD}})    
+    add_library(${OBJECT_${SIMD}} OBJECT ${SIMD_SOURCES} ${HEADER_${SIMD}})
+    add_library(${OBJECTDET_${SIMD}} OBJECT ${SIMD_SOURCES} ${HEADER_${SIMD}})
     target_compile_definitions(${OBJECTDET_${SIMD}} PRIVATE DETERMINISTIC=1)
 
     if(COMPILER_SUPPORTS_BUILTIN_MATH)
@@ -412,9 +432,9 @@ if(ENABLE_GNUABI)
     endif(COMPILER_SUPPORTS_${SIMD})
   endforeach()
 
-  # Create library 
+  # Create library
   add_library(${TARGET_LIBSLEEFGNUABI} ${TARGET_LIBSLEEFGNUABI_OBJECTS} rempitab.c)
-  
+
   # Library properties
   set_target_properties(${TARGET_LIBSLEEFGNUABI} PROPERTIES
     VERSION ${SLEEF_VERSION_MAJOR}.${SLEEF_VERSION_MINOR}
@@ -494,10 +514,22 @@ if(CLANG_EXE_PATH AND SLEEF_ENABLE_LLVM_BITCODE)
 endif()
 
 # --------------------------------------------------------------------
+# TARGET_SIMD_HEADERS
+# Generate LLVM bitcode
+# --------------------------------------------------------------------
+add_library(sleef_simd_headers INTERFACE)
+file(COPY ${SLEEF_SIMD_HEADERS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/simd/sleef)
+target_include_directories(sleef_simd_headers INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/simd)
+if(CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
+  target_compile_options(sleef_simd_headers INTERFACE "-Wno-attributes")
+endif()
+
+# --------------------------------------------------------------------
 # Install
 # --------------------------------------------------------------------
-# Install libsleef and sleef.h
+# Install libsleef and sleef.h,  sleefsimdsp.h, and sleefsimddp.h
 install(FILES ${SLEEF_INCLUDE_HEADER} DESTINATION include)
+install(FILES ${SLEEF_SIMD_HEADERS} DESTINATION include/sleef)
 install(TARGETS ${TARGET_LIBSLEEF} DESTINATION lib)
 
 if(ENABLE_GNUABI)

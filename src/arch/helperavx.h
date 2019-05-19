@@ -3,6 +3,9 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#ifndef __HELPERAVX_H__
+#define __HELPERAVX_H__
+
 #if CONFIG == 1
 
 #if !defined(__AVX__)
@@ -58,13 +61,13 @@ typedef struct {
 void Sleef_x86CpuID(int32_t out[4], uint32_t eax, uint32_t ecx);
 #endif
 
-static int cpuSupportsAVX() {
+static INLINE int cpuSupportsAVX() {
     int32_t reg[4];
     Sleef_x86CpuID(reg, 1, 0);
     return (reg[2] & (1 << 28)) != 0;
 }
 
-static int cpuSupportsFMA4() {
+static INLINE int cpuSupportsFMA4() {
     int32_t reg[4];
     Sleef_x86CpuID(reg, 0x80000001, 0);
     return (reg[2] & (1 << 16)) != 0;
@@ -133,7 +136,7 @@ static vint2 vloadu_vi2_p(int32_t *p) {
 
 static void vstoreu_v_p_vi2(int32_t *p, vint2 v) {
   _mm_storeu_si128((__m128i *) p     , v.x);
-  _mm_storeu_si128((__m128i *)(p + 4), v.y);  
+  _mm_storeu_si128((__m128i *)(p + 4), v.y);
 }
 
 static vint vloadu_vi_p(int32_t *p) { return _mm_loadu_si128((__m128i *)p); }
@@ -690,3 +693,5 @@ static INLINE vint vcast_vi_vm(vmask vm) {
   return _mm_or_si128(_mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(_mm256_castsi256_si128(vm)), _mm_set1_ps(0), 0x08)),
   		      _mm_castps_si128(_mm_shuffle_ps(_mm_set1_ps(0), _mm_castsi128_ps(_mm256_extractf128_si256(vm, 1)), 0x80)));
 }
+
+#endif // __HELPERAVX_H__

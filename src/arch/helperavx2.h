@@ -3,6 +3,9 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+#ifndef __HELPERAVX2_H__
+#define __HELPERAVX2_H__
+
 #if CONFIG == 1
 
 #ifndef __AVX2__
@@ -55,13 +58,13 @@ typedef struct {
 void Sleef_x86CpuID(int32_t out[4], uint32_t eax, uint32_t ecx);
 #endif
 
-static int cpuSupportsAVX2() {
+static INLINE int cpuSupportsAVX2() {
     int32_t reg[4];
     Sleef_x86CpuID(reg, 7, 0);
     return (reg[1] & (1 << 5)) != 0;
 }
 
-static int cpuSupportsFMA() {
+static INLINE int cpuSupportsFMA() {
     int32_t reg[4];
     Sleef_x86CpuID(reg, 1, 0);
     return (reg[2] & (1 << 12)) != 0;
@@ -507,3 +510,5 @@ static INLINE vint vcast_vi_vm(vmask vm) {
   return _mm_or_si128(_mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(_mm256_castsi256_si128(vm)), _mm_set1_ps(0), 0x08)),
   		      _mm_castps_si128(_mm_shuffle_ps(_mm_set1_ps(0), _mm_castsi128_ps(_mm256_extractf128_si256(vm, 1)), 0x80)));
 }
+
+#endif // __HELPERAVX2_H__
